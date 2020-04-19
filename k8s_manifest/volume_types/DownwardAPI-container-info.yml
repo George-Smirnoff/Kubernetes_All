@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: downward-api-cpu
+  name: downward-api-cpu
+spec:
+  containers:
+  - image: nginx
+    name: downward-api-cpu
+    resources: {}
+    command:
+      - sleep
+      - "3600"
+
+    volumeMounts:
+    - mountPath: /data-mount
+      name: podinfo
+  volumes:
+  - name: podinfo
+    downwardAPI: 
+      items:
+      - path: cpu-limit
+        resourceFieldRef:
+          containerName: downward-api-cpu
+          resource: limits.cpu
+ 
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}

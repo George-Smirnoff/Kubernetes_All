@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: gitrepo
+  name: gitrepo
+spec:
+  containers:
+  - image: nginx
+    name: gitrepo
+    resources: {}
+
+    volumeMounts:
+    - mountPath: /data-mount
+      name: gitrepo
+  volumes:
+  - name: gitrepo
+    gitRepo: 
+      repository: "https://github.com/George-Smirnoff/home-automation-device-registry.git"
+      revision: 276a2c25fe9c60ab1401e53e11eb1af551811cb5
+ 
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}

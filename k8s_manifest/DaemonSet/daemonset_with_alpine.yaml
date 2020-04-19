@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app: centos
+  name: centos
+spec:
+  selector:
+    matchLabels:
+      app: centos
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: centos
+    spec:
+      containers:
+      - image: centos
+        name: centos
+        command: ["/bin/bash", "-c", "while true; do free; sleep 30; done"]        
+        resources: {}

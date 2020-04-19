@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"rng"},"name":"rng","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"rng"}},"template":{"metadata":{"labels":{"app":"rng"}},"spec":{"containers":[{"image":"dockercoins/rng:v0.1","name":"rng"}]}}}}
+  creationTimestamp: "2020-03-01T10:57:18Z"
+  generation: 7
+  labels:
+    app: rng
+  name: rng
+  namespace: default
+  resourceVersion: "358325"
+  selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/rng
+  uid: 7a260aea-ed4e-4881-85ce-54c4bba9897d
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: rng
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: rng
+    spec:
+      containers:
+      - image: dockercoins/rng:v0.1
+        imagePullPolicy: IfNotPresent
+        name: rng
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

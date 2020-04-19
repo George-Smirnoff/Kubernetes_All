@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-private-registry 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: my-registry
+  template:
+    metadata:
+      labels:
+        run: my-registry 
+    spec:
+      containers:
+      - name: my-registry
+        image: registry
+        env:
+          - name: REGISTRY_HTTP_SECRET 
+            valueFrom:
+              secretKeyRef:
+                name: registry-secrets 
+                key: http.secret
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE 
+            value: /mnt/domain.crt
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: /mnt/domain.key
+          - name: REGISTRY_AUTH_HTPASSWD_REALM
+            value: "Registry Realm"
+          - name: REGISTRY_AUTH_HTPASSWD_PATH
+            value: /mnt/registry_passwd
+          - name: REGISTRY_HTTP_HOST
+            value: 10.99.202.57:5000
+        ports:
+          - containerPort: 5000
+        volumeMounts:
+          - mountPath: /var/lib/registry
+            name: registry-storage
+          - mountPath: /mnt
+            name: certs           
+          - mountPath: /etc/docker/registry/
+            name: registry-config
+      volumes:
+      - name: registry-storage 
+        hostPath:
+          path: /Users/hsmirnou/kubernetes/registry/private_registry/registry-storage
+      - name: certs
+        secret:
+          secretName: registry-secrets
+          items:
+          - key: domain.key
+            path: domain.key
+          - key: domain.crt
+            path: domain.crt
+          - key: registry_passwd
+            path: registry_passwd
+      - name: registry-config
+        configMap:
+          name: registry-config
+          items:
+          - key: config.yml
+            path: config.yml
+#      - name: registry-config
+#        hostPath:
+#          path: /Users/hsmirnou/kubernetes/registry/private_registry/config/config.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-registry
+spec:
+  ports:
+  - nodePort: 31250
+    port: 5000
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    run: my-registry
+  sessionAffinity: None
+  type: NodePort
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+data:
+  config.yml: |
+    version: 0.1
+    log:
+      accesslog:
+        disabled: false
+      level: debug
+      formatter: text
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+      filesystem:
+        rootdirectory: /var/lib/registry
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options: [nosniff]
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
+---
+apiVersion: v1
+data:
+  domain.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUUxRENDQXJ3Q0NRREdxbFNXRURXai9UQU5CZ2txaGtpRzl3MEJBUXNGQURBc01Rc3dDUVlEVlFRR0V3SlYKVXpFTE1Ba0dBMVVFQ0F3Q1FWSXhFREFPQmdOVkJBY01CMEZ5YVhwdmJtRXdIaGNOTWpBd05ERXpNRGd6TURNMwpXaGNOTWpFd05ERXpNRGd6TURNM1dqQXNNUXN3Q1FZRFZRUUdFd0pWVXpFTE1Ba0dBMVVFQ0F3Q1FWSXhFREFPCkJnTlZCQWNNQjBGeWFYcHZibUV3Z2dJaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQ0R3QXdnZ0lLQW9JQ0FRQzkKM24rQ0FnQUwzdU42YmNUbk50bnB2Uk1sL3hpa09GN01HeVFRWWxBbmhBNll6cnZGRy9SaGNvOWxBTFkzVHVhawpGb2d1TDIvRzQzSjFCb0VXenNHckFYMDIra2Q5eHlFamg5YTMrY3dEdGFRMVdoamNCU0tFOVVDbWJsYnR4U2ZJCm53K3NUUHFPUEdZZmZoSVdRODZ5R0JGQVNDeGpoTW5XWnlVR0tXZnlqQU9ud1pJZ0NvTGY5NVBpYkdxcGFqMlgKL1VnZXB2b1JjN1duRnF1NWhtM1J2QkhheGJJamhIUCt6b0ZWa2hWSFMvYW1qOVF2NTV5dVcxcEttMXVuTFpYWQpyYWEzZUdvL0lIcnFFWERNVC9hcUVJWjFXWDJ5YVF0YUgzblR4UkZKK3RLTWZrZExZRkFJTUZJUWtycFJvWXNBCmlUVHR3NmFYODNBYXkrSmhCNk00YVFoTG5vdlgwQmwzQWZDRGN6WVhRaXgvRTJ5Z3drY2ZTOExDeHV5Z1lkZ3IKSHN1RDBrc2RBdng0Q2JxRmtLMWU4czVuOFc2TERHWTVwUkVQSW1yZzFadFIraVFFTVRrV3daYzBLdE4wekdJNgpyckwyek96Y2g4TXRVUXB3T1NMMlloNXlaNGttZktIV2NvZTQxVWJBLzZnUGRkaFFOODZjYjZOQjZZMHNseXB4CnFMeGF1bmlZYW50aDlpSitZTXptTTVVRGgyU3lRNWJISUIvZ3lvZThOb3ovUHVaVEIwNDF3ZElkUHVrT2J1S24KMzFVMWxYVU9aQmQ2YTNVa0RYYWpLYlBxcEhtYUhkV210R1VqOVprOHRtODM3SEl0ejZSTUVwU2QwUFdEb1pjawpNakViWHBlWlVldVVMRmVBMnQraTA1V25CVVdMWWNONmZCeHN1MjJpV1FJREFRQUJNQTBHQ1NxR1NJYjNEUUVCCkN3VUFBNElDQVFDQmQ3L3QyaW5MdzAwRXRlVkFVNVppdW4zSlFtQ0F2NVIrVmUwdHdkT2Ewb0pCYW4rb1hlZ2oKM0RJN0RwRVovaTJRbzU0cmhkUHVUb1YyQzNqYSs1Q0tmY0JZdUVlbVVFUExCbDhBN1JHNzYyZnRmWk5pM0VqZgpMNVg3RWtucTU1TEM3QmF4Z08wQnhIN09taXBOTFBNdXE5djRITzlRWE03b0RGYkQ4QUhsUlRIN0M1MytLT21LCmx4OE1jQUhheStHcW1aQVV3T21NaG4zOWx3R0tkZ3pvaWt0WG1oM0p1YWpKV09JMFQ3VVI3cjZUUUR2V3dVQmYKaHlMWEpWc0UyS292aU5GUng4UjRkdlpybXo5aG5CaVRHQTdyYVMrc2Qyb2dGWlV1TTNLNlZjWE5tTmNzVUhuOQo2NlRMN1lrWFl1aURwV01BT2NEZ3ZDSlREcUsrNDUveXZWNkJtRVdjSUp1ZTY3amRXZnlaN1kxNnp4UUJYdTRaCjJlZk1ibkhhVGNDWFlKWUtwc3NlQ3dudVpWeW9PWnpRYy9LdjJDRW5EdGJrQVAyc2pud09CVWwxemVyUi9FQWUKNk4wN09hMXBBSUJ6anArRnczTDR0N3pQa0tjRUJaZ2M1MzR3VWNnTWgrRkpkejJYK25yLy9jNjA3aTlTTkFKbAo3NjM4Y1V2YlhGamZpWFVlRFFDQVdWVmdDbWlJRUJ1RnFUcWRIc1Avczdma3FLMGo5QnFPbGdsdHQ3ZHdNMmxHCmE1Q3JhcmFocGxBNHpUbkRZdEI0NWY5M3JXKzBTTVZkcmYzTjBMOUJlV2FCV3c5LzBFNERHMlNHTXI5QmNBWm4Kdll3dE8ranIxSlF3Q1Z5TFJwVWxMTVNJOWRJbjFHZFF6TFh2TnlITFJIbSswSE43R0FMT2FnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  domain.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUpRZ0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQ1N3d2dna29BZ0VBQW9JQ0FRQzkzbitDQWdBTDN1TjYKYmNUbk50bnB2Uk1sL3hpa09GN01HeVFRWWxBbmhBNll6cnZGRy9SaGNvOWxBTFkzVHVha0ZvZ3VMMi9HNDNKMQpCb0VXenNHckFYMDIra2Q5eHlFamg5YTMrY3dEdGFRMVdoamNCU0tFOVVDbWJsYnR4U2ZJbncrc1RQcU9QR1lmCmZoSVdRODZ5R0JGQVNDeGpoTW5XWnlVR0tXZnlqQU9ud1pJZ0NvTGY5NVBpYkdxcGFqMlgvVWdlcHZvUmM3V24KRnF1NWhtM1J2QkhheGJJamhIUCt6b0ZWa2hWSFMvYW1qOVF2NTV5dVcxcEttMXVuTFpYWXJhYTNlR28vSUhycQpFWERNVC9hcUVJWjFXWDJ5YVF0YUgzblR4UkZKK3RLTWZrZExZRkFJTUZJUWtycFJvWXNBaVRUdHc2YVg4M0FhCnkrSmhCNk00YVFoTG5vdlgwQmwzQWZDRGN6WVhRaXgvRTJ5Z3drY2ZTOExDeHV5Z1lkZ3JIc3VEMGtzZEF2eDQKQ2JxRmtLMWU4czVuOFc2TERHWTVwUkVQSW1yZzFadFIraVFFTVRrV3daYzBLdE4wekdJNnJyTDJ6T3pjaDhNdApVUXB3T1NMMlloNXlaNGttZktIV2NvZTQxVWJBLzZnUGRkaFFOODZjYjZOQjZZMHNseXB4cUx4YXVuaVlhbnRoCjlpSitZTXptTTVVRGgyU3lRNWJISUIvZ3lvZThOb3ovUHVaVEIwNDF3ZElkUHVrT2J1S24zMVUxbFhVT1pCZDYKYTNVa0RYYWpLYlBxcEhtYUhkV210R1VqOVprOHRtODM3SEl0ejZSTUVwU2QwUFdEb1pja01qRWJYcGVaVWV1VQpMRmVBMnQraTA1V25CVVdMWWNONmZCeHN1MjJpV1FJREFRQUJBb0lDQURyZDVBeUwwRFhkK2dzNFEwY29jM0dMCnBJY3dTeFNIUWFUb2VVcjNJRURRS2JKb3prQ3poUlk5YllYMExZcUNWUEhrNW4zalNUV1J5U2ZOUjNLcDBkUFMKRjE5WFE1a1Vod3E4RCs5a2JFTnVLcVk3ODk4clhHTjZvbnUzVkE1T0JTS25aaldXZkV4akg0cCtETitJVUdwWgpHZWdqT0ZmMmtKbC95elBZM0ppUG5vYUJkbXVtdHFMMzRJcmY4RVhzWVlKaERkNHJDUGNtTjlqQko2YlNyZlBMCjZvRTRzQjFnOEpHOHRzNndCeGJlejI4ZXdydkRoSWx1VzFVc1M4Tk9WOW9oSk1KWGZDRnNVWStHcnNFNXZaRkcKcEZsMzBJZmpGNWp1ajFnQURuY3dZOTBaUGNONTdmWkwvUFdVZUYzY3h2cjRqMGQwVkk5aDg0enJUNW1qdzQrdAptYy9ZZmFaWW0zanVsRktNK2xiRkVkRzNNejV4cTZDV1dPdGkyOXNyYTlUaGJFSzB5TEJHY1V2a295VEJXT2IxCllheThHYTZQak1EeFFJNjlDR0ZucWtrWDhDMjh6bjM0RGpma05XMVB4cGcxdVhmU2E5SE55S2JvbFhUaG5hcEwKdytnQWcvbzBNYUoyU3NFWGlWZUlRbExDamhmbjRUaWF1NjRrSWc4UVJ1enJ3U3pIaWp5ZUNpQ1VEUzRLVUUzTQp1NHJISnpjYnJqWDBFSVBNclN2bUxOeXM4TU9JY2ttZGZWVExVb09xUVFocFNXeDA2QWsvSi84bEYwZnloTGFqClpVdjQrV2VRYjBQNEVSdUI1Q0RrOWl3T1JwWlhhRjZHUTExWndwYVI0UWZ1WGtIem9xSUE4T1kyYjhNc204b1QKem1mY0RwMU5tVm85ZHhpZE9NM05Bb0lCQVFEdm03bytUZzNhMk43dDdjZHYrcnRUdDgvTVBYTWNnbTVlTDM4dgo1SlZKM2swRXZxR3pFRWdQSXQrcis3VkFVc0tCZ05PT044L3JHTzZUUDMvVlpmOFpYVVhhdVBkUnlFNlZOVFFJCnBLazhMdW5FRXRoQWRRY1J1SXhmb0NoOGFlZFBLSlZuSUZxVXVJbmJ6QlpiakF0WGUyeFhzd0xheDFwR3orM0kKckh2MXNodjlSTnQ3ZGN6UTNOSGZXSHpQQkVrUDB1dWZoRWFSVXJqc1U3RGV1WWp1bmQyLys3MkM2L1ptVDdDNwp5Zm4vQXFic0lpUzdMYXFXQ0Y5b0wwTnovdGFsb1l1OEJjb3NYMU9GTUhML0ZmM1YyUXJ3SWR2MDI3bGtYMExNCmNOWGFGQVhoSWRJeEhLYkdHN0twU3FvREtvQXZyaUFyUzdkTnhQaGhhRUIva3pOSEFvSUJBUURLMjYrU2NUdWMKV3hJSlNTTGhTcHRzN2lFc1ZoTjN3WFpuNFdHbmNlWndoYW1zaG1sOFRueFJETzZiaEowaFlGMXhuQ3ZIejluNApPWjZ6dGNReVloaTZ4YTNhbGc0T3ErWkQvYlo1WUhROG0ySm1ZOU4xdE1YSHdOQ1R1VnZMUVZ0QlRCR2lsYVBaCjlDQkhaTjl3U1lUWE5Wc0FtbEQ2eXNCd3Rrb1czeHpUdllubzBxdHNCdkE4RCtWbEdGNzhOQlVPa3lzSTh3QkEKeFFZZmRQUC9aYmpHcnZwM1p0cmx2U1laWSs0OGYvZDJUZWpPWXh2MStsdDh0RE1aM3NxZDNvckpDaTA5T2dPQQpJczBBR05jVE44ZXdicWI5Tm5pbzVSa2F0bm0xRlFKamZrN1gxNGZ5akJMNEJzWGovTTQ0WGk0L3d0ZXhsd2puCk9MU0tZOTJQdFExZkFvSUJBQ04rUWZ4d3U0U3JrM3BUT3JQUHhHZ0dWblcrdElxSWw2akVDR2NqeVNtRUVJeWYKWUh5UjhOcXRJOHpxSUZOQzd5VVgzRDY0N2NlNWpiMnFMbG1DSG1PM2VWMkpBTG5RbmpOa0NpMHRseFFmTHVtbwprUGdiWGN5Mk5iVUVtSHExaFZvb2ZOa2w1Y1VhQVBIYUxZV3FIUlA4YUhRbFJFcjhOTmRBZmN5NElEU3BDWlJlCjJ0UlRBdC85bGVrcnhuRTBCVTZldytDQlM2TERTamxYdkYrQnhGTDBkNkMwdmNIakNrRGxsUng4TXRnZm9ISmkKTEdhOXdRTXdnbEdBanRGajhvL2Vla0NENndyZnBCT2F0YTRycDhwQnVHa1IydTlPalF2ZFFKdmdLdzErNGRBVApubnMvNzBSeFhlbk44WmsrZG5hWnFKSkJTUW53SDRydVVuK1RZb2tDZ2dFQUZWNi9TRFlWaVlzdWd6dnBLTUtyClRQWnBHRHFaSW15SEJMcUJoeHBBcEdud1RmUjYrRlZzVXoyQmhYQ2EvUUVoMXU0VXpwL2Uzbjl6Y0lzZGVCRk4KZVorSmlSVjF0YVgyUkFOZVRic1RnNjc2MXI1OWNGRHk1UEF6Q056bUJxdUQ2WVVSOW9hOUZDRGJwYW5Dd0JsKwpuUTFKNE81Z3lZckNheDFKQU0vUVFaNGVBU0R3WGhqOUJkYkcyN2VOaWhRU2c4Nk5JZ3czWXB0ZTRjRjRVdGRzCmQ4SEhNUHpzNG5iaXBKb2FadFUwUklwQWxEMXNuS1ViTGkvdGtqUWVORE5WZTRoTzY3eEkwaDdZYWNJMEpob2kKTnp2dzY0dnBlaUZvVzZBTmdqNE1XbDdiLzNEOUtWZ0lSNGl2SUMxcHJCWi8yTWUxNFVkLzhKdlFxU09NRzY5LwpFUUtDQVFFQXhzMCtqR3E2Mlk0S2hkTXVhZmxVb0I2M2tSZ0UycmYyMlY0VnJqZDRKN29Na1NDTnBTVjhWZGdrCmcwSjgvbDEveDY5Mkk2OU1yeURNMVlsWFZ6dWpVUnZvNnFSQnUvQXg2ZDlyQ0NraTl2QkNBNDdMTURZa3lkVEgKd0lPdlN2dmxaemxTbU1WQ3MzZXpkbUVHL3JORlArZUxyRFFGSW44V0swbFY4Vk40dEprMVIvdURPM1lsRS9XWgpVN294ZUtYTU5KazM4SHFkYWt4Rnk0TWFGSE1ValhBSWJPSis1V2t6RHM5V250cnpIdGovT0NuK1kzTjJOak9PCkFZNW03WWQ5MVRwTUcxdnZ6bWhBY011dzhYNTNabmptVjl3dXp6OFlBVmVnMUI2ZXNVM2JsVUI2cjN5aTBuMFQKQXgyWW5EZG9FdXNNMExzdEo0b0haWCtTT1ZITUt3PT0KLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo=
+  http.secret: MTNmZjBkMTE4ZTI3YTJkNwo=
+  registry_passwd: dXNlcjE6JDJ5JDA1JGRDc3lyTHkuVURzY1FTQ1gyU2EuSi5mL1ZBNjZ5bjNlM0dTNG96L1dwNXh2cDZMdGVMT3AuCgo=
+kind: Secret
+metadata:
+  name: registry-secrets
+type: Opaque

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: nginx
+  name: nginx
+spec:
+  replicas: 3
+  selector:
+    matchExpressions:
+    - {key: project, operator: In, values: [poc]}
+    - {key: env, operator: In, values: [dev]}
+    - {key: tier, operator: NotIn, values: [backend, cache]}
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        project: poc
+        env: dev
+        tier: frontend
+    spec:
+      containers:
+      - image: nginx
+        name: my-nginx
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}

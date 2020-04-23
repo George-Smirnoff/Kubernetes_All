@@ -28,13 +28,49 @@ OR attach the role on KOPS Bastion instance
 4) Prepare a Route53 DNS domain for accessing points of cluster: In our demonstration later, the domain name we use will be  private DNS zone "wkfusion.com".
 
 
+# Export kops state path as Env var
+```
+export KOPS_STATE_STORE=s3://kops-bucket-ferda234
+```
 
-Run command to create
+# Run command to create
 ```
     kops create cluster --name my-kops-cluster.wkfusion.com --state=s3://kops-bucket-ferda234 --zones eu-central-1c --cloud aws --network-cidr 10.10.0.0/16 --master-size t2.large --node-size t2.medium --node-count 2 --networking calico --topology private --dns private --dns-zone wkfusion.com --ssh-public-key ~/.ssh/EU_Frankfurt.pub --bastion --yes
 ```
 
-Run command to delete
+# Run command to delete
 ```
     kops delete cluster --name my-kops-cluster.wkfusion.com  --state=s3://kops-bucket-ferda234 --yes
 ```
+
+# Get instancegroups or kops get ig
+```
+ kops get instancegroups
+ ```
+
+# Validate cluster
+ #
+ ```
+ kops validate cluster
+```
+# To change nodes instance type/number:
+```
+kops edit instancegroups nodes --name my-kops-cluster.wkfusion.com
+kops update cluster --name my-kops-cluster.wkfusion.com --yes
+```
+
+# To update bastions autoscaling group
+```
+kops edit instancegroups bastions --name my-kops-cluster.wkfusion.com
+kops update cluster --name my-kops-cluster.wkfusion.com --yes
+```
+
+# To update Master autoscaling group
+```
+kops edit instancegroups master-eu-central-1c --name my-kops-cluster.wkfusion.com
+kops update cluster --name my-kops-cluster.wkfusion.com --yes
+```
+Updating masters is the same as updating nodes. Note that masters in the same availability zone are in one instance group. This means that you can't add additional subnets into the master instance group.<br>
+In the real world, the recommended way is to deploy masters to at least two availability zones and have three masters per zone (one kops instance group). You can achieve that via the --master-count and --master-zones parameters when launching the cluster.
+
+

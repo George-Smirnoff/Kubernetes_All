@@ -1,0 +1,12 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1 
+metadata:
+  name: devops-role-binding 
+subjects:
+- apiGroup: ""
+  kind: User
+  name: nick
+roleRef:
+  apiGroup: "" 
+  kind: Role
+  name: configmap-ro

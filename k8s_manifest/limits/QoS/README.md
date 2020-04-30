@@ -6,6 +6,9 @@ Kubernetes uses QoS classes to make decisions about scheduling and evicting Pods
 
 - Every Container in the Pod must have a memory limit and a memory request (or only limit), and they must be the same.
 - Every Container in the Pod must have a CPU limit and a CPU request (or only limit), and they must be the same.<br>
+`If  memory/CPU request isn't  defined it will take the value of limit automatically.`<br> 
+`If only request values is defined it means that resource doesn't have hardware restriction and can take all node capacity.`
+
 Both conditions should be fulfilled. If we will have only cpu or memory value QoS will have Burstable class!
 
 ```

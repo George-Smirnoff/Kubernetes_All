@@ -1,0 +1,1 @@
+Works since use the ServiceAccount with necessary permissions

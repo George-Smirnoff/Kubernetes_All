@@ -33,10 +33,26 @@ OR attach the role on KOPS Bastion instance
 export KOPS_STATE_STORE=s3://kops-bucket-ferda234
 ```
 
-# Run command to create
+# Run command to create private cluster without bastion host
 ```
-    kops create cluster --name my-kops-cluster.wkfusion.com --state=s3://kops-bucket-ferda234 --zones eu-central-1c --cloud aws --network-cidr 10.10.0.0/16 --master-size t2.large --node-size t2.medium --node-count 2 --networking calico --topology private --dns private --dns-zone wkfusion.com --ssh-public-key ~/.ssh/EU_Frankfurt.pub --bastion --yes
+    kops create cluster --name my-kops-cluster.wkfusion.com --state=s3://kops-bucket-ferda234 --zones eu-central-1c --cloud aws --network-cidr 10.10.0.0/16 --master-size t2.large --node-size t2.medium --node-count 2 --networking calico --topology private --dns private --dns-zone wkfusion.com --ssh-public-key ~/.ssh/EU_Frankfurt.pub --bastion false --yes
 ```
+
+# Run command to create public cluster
+```
+    kops create cluster --name my-kops-cluster.wfko-10056.workfusion.com --state=s3://kops-bucket-ferda234 --zones eu-central-1c --cloud aws --network-cidr 10.10.0.0/16 --master-size t2.large --node-size t2.medium --node-count 2 --networking calico --topology public --dns public --dns-zone wfko-10056.workfusion.com --ssh-public-key ~/.ssh/EU_Frankfurt.pub --yes
+```
+
+`The command "kops create cluster" automatically create the kube config in ~/.kube/config folder`
+
+We can install the kubectl on the same server to start to manage the cluster:
+```
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+kubectl get nodes
+```
+
 
 # Run command to delete
 ```

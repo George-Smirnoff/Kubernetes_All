@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remote-host
+  labels:
+    app: remote-host
+spec:
+  ports:
+    - port: 22
+  selector:
+    app: remote-host
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: remote-host
+  name: remote-host
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: remote-host
+  template:
+    metadata:
+      labels:
+        app: remote-host
+    spec:
+      containers:
+      - image: 050419950514/remote-host:v1
+        name: remote-host

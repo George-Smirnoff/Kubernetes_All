@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins
+spec:
+  ports:
+  - nodePort: 32000
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    run: jenkins
+  sessionAffinity: None
+  type: NodePort
+  #---
+  #apiVersion: v1
+  #kind: PersistentVolumeClaim
+  #metadata:
+  #  name: jenkins-pv-claim
+  #  labels:
+  #    run: jenkins
+  #spec:
+  #  accessModes:
+  #    - ReadWriteOnce
+  #  resources:
+  #    requests:
+  #      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: jenkins
+  template:
+    metadata:
+      labels:
+        run: jenkins 
+    spec:
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins
+        resources:
+          limits:
+            memory: "1Gi"
+          requests:
+            memory: "524Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        env:
+          - name: DOCKER_TLS_CERTDIR 
+            value: ""
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 15
+        volumeMounts:
+          - mountPath: /var/jenkins_home
+            name: jenkins-persistent-volume-data
+      volumes:
+      - name: jenkins-persistent-volume-data
+        persistentVolumeClaim:
+          claimName: jenkins-home
+        #        nfs:
+        #          server: 172.31.36.97 
+        #          path: /mnt/jenkins_home

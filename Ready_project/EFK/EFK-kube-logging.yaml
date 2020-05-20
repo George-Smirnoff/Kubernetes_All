@@ -66,16 +66,30 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-# This field sets a list of master-eligible nodes in the cluster that will seed the node discovery process. In this guide, thanks to the headless service we configured earlier, our Pods have domains of the form es-cluster-[0,1,2].elasticsearch.kube-logging.svc.cluster.local, so we set this variable accordingly. Using local namespace Kubernetes DNS resolution, we can shorten this to es-cluster-[0,1,2].elasticsearch. To learn more about Elasticsearch discovery, consult the official Elasticsearch documentation: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/discovery-settings.html                
+# This field sets a list of master-eligible nodes in the cluster 
+# that will seed the node discovery process. In this guide, 
+# thanks to the headless service we configured earlier, 
+# our Pods have domains of the form 
+# es-cluster-[0,1,2].elasticsearch.kube-logging   , 
+# so we set this variable accordingly. Using local namespace Kubernetes 
+# DNS resolution, we can shorten this to es-cluster-[0,1,2].elasticsearch. 
+# To learn more about Elasticsearch discovery, consult the official 
+# Elasticsearch documentation: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/discovery-settings.html                
           - name: discovery.seed_hosts
             value: "es-cluster-0.elasticsearch,es-cluster-1.elasticsearch,es-cluster-2.elasticsearch"
-# This field also specifies a list of master-eligible nodes that will participate in the master election process. Note that for this field you should identify nodes by their node.name, and not their hostnames
+# This field also specifies a list of master-eligible nodes that 
+# will participate in the master election process. Note that 
+# for this field you should identify nodes by their node.name, 
+# and not their hostnames
           - name: cluster.initial_master_nodes
             value: "es-cluster-0,es-cluster-1,es-cluster-2" 
-# This field also specifies a list of master-eligible nodes that will participate in the master election process. Note that for this field you should identify nodes by their node.name, and not their hostnames
+# This field also specifies a list of master-eligible nodes that 
+# will participate in the master election process. Note that for this 
+# field you should identify nodes by their node.name, and not their hostnames
           - name: ES_JAVA_OPTS
             value: "-Xms512m -Xmx512m"
-# run before the main elasticsearch app container. Link: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/            
+# run before the main elasticsearch app container. 
+# Link: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/            
       initContainers:
       - name: fix-permissions
         image: busybox
@@ -85,13 +99,16 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /usr/share/elasticsearch/data
-#  command to increase the operating system’s limits on mmap counts, which by default may be too low, resulting in out of memory errors. Link: https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html
+# command to increase the operating system’s limits on mmap counts, 
+# which by default may be too low, resulting in out of memory errors. 
+# Link: https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html
       - name: increase-vm-max-map
         image: busybox
         command: ["sysctl", "-w", "vm.max_map_count=262144"]
         securityContext:
           privileged: true
-# command to increase the maximum number of open file descriptors. Link: https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html#_notes_for_production_use_and_defaults          
+# command to increase the maximum number of open file descriptors. 
+# Link: https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html#_notes_for_production_use_and_defaults          
       - name: increase-fd-ulimit
         image: busybox
         command: ["sh", "-c", "ulimit -n 65536"]
@@ -122,6 +139,7 @@ spec:
   - port: 5601
   selector:
     app: kibana
+  type: NodePort
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -218,14 +236,24 @@ spec:
     spec:
       serviceAccount: fluentd
       serviceAccountName: fluentd
-      tolerations: # toleration to match the equivalent taint on Kubernetes master nodes. This will ensure that the DaemonSet also gets rolled out to the Kubernetes masters. If you don’t want to run a Fluentd Pod on your master nodes, remove this toleration
+# toleration to match the equivalent taint on Kubernetes master nodes. 
+# This will ensure that the DaemonSet also gets rolled out to 
+# the Kubernetes masters. If you don’t want to run a Fluentd Pod on your 
+# master nodes, remove this toleration      
+      tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
       containers:
       - name: fluentd
         image: fluent/fluentd-kubernetes-daemonset:v1.4.2-debian-elasticsearch-1.1
         env:
-# Elasticsearch headless Service address defined earlier: elasticsearch.kube-logging.svc.cluster.local. This will resolve to a list of IP addresses for the 3 Elasticsearch Pods. The actual Elasticsearch host will most likely be the first IP address returned in this list. To distribute logs across the cluster, you will need to modify the configuration for Fluentd’s Elasticsearch Output plugin. Link: https://docs.fluentd.org/v1.0/articles/out_elasticsearch#hosts-(optional)
+# Elasticsearch headless Service address defined earlier: 
+# elasticsearch.kube-logging.svc.cluster.local. 
+# This will resolve to a list of IP addresses for the 3 Elasticsearch Pods. 
+# The actual Elasticsearch host will most likely be the first IP address 
+# returned in this list. To distribute logs across the cluster, 
+# you will need to modify the configuration for Fluentd’s Elasticsearch 
+# Output plugin. Link: https://docs.fluentd.org/v1.0/articles/out_elasticsearch#hosts-(optional)
           - name:  FLUENT_ELASTICSEARCH_HOST
             value: "elasticsearch.kube-logging.svc.cluster.local"
           - name:  FLUENT_ELASTICSEARCH_PORT

@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-jenkins-from-kops
+  labels:
+    run: jenkins
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  #  storageClassName: slow
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+    - debug
+  nfs:
+    path: /mnt/jenkins_home
+    server: 172.31.36.97
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-claim-jenkins-from-kops
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+

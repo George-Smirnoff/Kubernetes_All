@@ -56,7 +56,7 @@ kubectl get nodes
 
 # Run command to delete
 ```
-    kops delete cluster --name my-kops-cluster.wkfusion.com  --state=s3://kops-bucket-ferda234 --yes
+    kops delete cluster --name my-kops-cluster.wfko-10056.workfusion.com  --state=s3://kops-bucket-ferda234 --yes
 ```
 
 # Get instancegroups or kops get ig

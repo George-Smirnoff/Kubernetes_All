@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJsb2NhbGhvc3Q6NTAwMCI6eyJ1c2VybmFtZSI6InVzZXIxIiwicGFzc3dvcmQiOiJwYXNzd2QiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiYXV0aCI6ImRYTmxjakU2Y0dGemMzZGsifX19
+kind: Secret
+metadata:
+  name: my-private-registry-secret
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deploy-host
+  labels:
+    app: deploy-host
+spec:
+  ports:
+    - port: 22
+      targetPort: 2222
+  selector:
+    app: deploy-host
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: deploy-host
+  name: deploy-host
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-host
+  template:
+    metadata:
+      labels:
+        app: deploy-host
+    spec:
+      imagePullSecrets:
+      - name: my-private-registry-secret
+      containers:
+      - image: localhost:5000/docker-with-ssh:v2.1
+        name: deploy-host
+        volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock

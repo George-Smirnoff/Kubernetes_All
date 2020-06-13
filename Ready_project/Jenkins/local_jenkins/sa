@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2020-02-24T20:45:58Z"
+  name: default
+  namespace: default
+  resourceVersion: "350"
+  selfLink: /api/v1/namespaces/default/serviceaccounts/default
+  uid: a7b347eb-838e-4b85-923a-be84a02a6d57
+secrets:
+- name: default-token-ng29d

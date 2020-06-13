@@ -1,0 +1,37 @@
+pipeline {
+    agent any 
+    stages {
+        stage('Build') { 
+            steps {
+                sh '''
+		./jenkins/build/mvn.sh mvn -B -DskipTest clean package
+                export IMAGE_NAME
+                export BUILD_TAG
+		./jenkins/build/build.sh
+		''' 
+            }
+        }
+        stage('Test') { 
+            steps {
+                sh './jenkins/test/mvn.sh mvn test'
+            }
+        }
+        stage('Push') { 
+            steps {
+		sh '''
+		export REGISTRY_USER
+                export REGISTRY_PASS
+                export REGISTRY_DNS
+                export IMAGE_NAME
+                export BUILD_TAG
+		./jenkins/push/push.sh
+		'''
+            }
+        }
+        stage('Deploy') { 
+            steps {
+                // 
+            }
+        }
+    }
+}

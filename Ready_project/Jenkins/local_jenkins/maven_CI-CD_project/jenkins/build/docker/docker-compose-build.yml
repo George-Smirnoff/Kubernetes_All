@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  app:
+    image: localhost:5000/$IMAGE_NAME:$BUILD_TAG
+    build: 
+      context: .
+      dockerfile: jdk_test.dockerfile

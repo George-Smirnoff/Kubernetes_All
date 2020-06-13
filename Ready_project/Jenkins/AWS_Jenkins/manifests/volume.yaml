@@ -1,3 +1,21 @@
+# Specifying a volumeName in your PVC does not prevent a different PVC from 
+# binding to the specified PV before yours does. Your claim will remain Pending
+# until the PV is Available.
+# Specifying a claimRef in a PV does not prevent the specified PVC from 
+# being bound to a different PV. The PVC is free to choose another PV to 
+# bind to according to the normal binding process. Therefore, to avoid 
+# these scenarios and ensure your claim gets bound to the volume you want, 
+# you must ensure that both volumeName and claimRef are specified.
+# You can tell that your setting of volumeName and/or claimRef influenced 
+# the matching and binding process by inspecting a Bound PV and 
+# PVC pair for the pv.kubernetes.io/bound-by-controller annotation. 
+# The PVs and PVCs where you set the volumeName and/or claimRef yourself 
+# will have no such annotation, but ordinary PVs and PVCs will have it set to "yes".
+# When a PV has its claimRef set to some PVC name and namespace, 
+# and is reclaimed according to a Retain reclaim policy, its claimRef will 
+# remain set to the same PVC name and namespace even if the PVC or 
+# the whole namespace no longer exists.
+# source: https://docs.openshift.com/container-platform/3.11/dev_guide/persistent_volumes.html
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -7,14 +25,15 @@ metadata:
     type: amazonEBS
 spec:
   capacity:
-    storage: 1Gi
+    storage: 2Gi
   accessModes:
   - ReadWriteOnce
+# pre-bind PVs to specific PVCs  
   claimRef:
     namespace: default
-    name: jenkins-home  
+    name:   remote-host-data
   awsElasticBlockStore:
-    volumeID: vol-028ec48bbe67a086b
+    volumeID: vol-09aa275bc1a2d1f64
     fsType: ext4
 ---
 kind: PersistentVolumeClaim
@@ -28,3 +47,15 @@ spec:
   resources:
     requests:
       storage: 1Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: remote-host-data
+spec:
+  storageClassName: ""     
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi      

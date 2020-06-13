@@ -16,6 +16,6 @@ RUN yum install mysql -y && \
                 yum clean all
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
     python get-pip.py && \
-    pip install awscli
+    pip install --no-cache-dir awscli ansible
 
 CMD ["/usr/sbin/sshd", "-D"]

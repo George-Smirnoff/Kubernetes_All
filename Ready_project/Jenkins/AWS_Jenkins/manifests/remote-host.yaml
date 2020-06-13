@@ -29,5 +29,12 @@ spec:
         app: remote-host
     spec:
       containers:
-      - image: 050419950514/remote-host:v1
+      - image: 050419950514/remote-host:v2
         name: remote-host
+        volumeMounts:
+          - mountPath: /var/data
+            name: remote-host-persistent-volume-data
+      volumes:
+      - name: remote-host-persistent-volume-data
+        persistentVolumeClaim:
+          claimName: remote-host-data       

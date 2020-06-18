@@ -40,7 +40,7 @@ spec:
       imagePullSecrets:
       - name: my-private-registry-secret
       containers:
-      - image: localhost:5000/docker-with-ssh:v2.1
+      - image: localhost:5000/docker-with-ssh:v2.2
         name: deploy-host
         volumeMounts:
         - name: docker-sock

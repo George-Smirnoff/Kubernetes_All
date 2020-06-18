@@ -15,7 +15,8 @@ COPY certs/deploy.pub /home/deploy-user/.ssh/authorized_keys
 RUN yum update -y && \
     yum install -y  docker \
                     java-1.8.0-openjdk \
-                    git && \
+                    git \
+                    maven && \
 	yum clean all
 
 RUN mkdir /var/lib/jenkins
